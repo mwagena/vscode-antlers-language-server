@@ -108,7 +108,7 @@ export class NodeBuffer {
     appendS(text: string) {
         let appendBuffer = '';
 
-        if (this.buffer.endsWith(' ') == false) {
+        if (/\s$/.test(this.buffer) == false) {
             appendBuffer += ' ';
         }
 
@@ -201,6 +201,26 @@ export class NodeBuffer {
 
     newLine() {
         this.buffer += "\n";
+
+        return this;
+    }
+
+    /**
+     * Removes the current line when it contains nothing but whitespace.
+     *
+     * Callers that are about to start a new line themselves use this to avoid
+     * leaving behind a line that holds only indentation.
+     */
+    trimBlankCurrentLine() {
+        const lineStart = this.buffer.lastIndexOf("\n");
+
+        if (lineStart == -1) {
+            return this;
+        }
+
+        if (this.buffer.substring(lineStart + 1).trim().length == 0) {
+            this.buffer = this.buffer.substring(0, lineStart);
+        }
 
         return this;
     }
