@@ -272,6 +272,55 @@ after = values[2][1] }}`,
         });
     });
 
+    test('separators stay on the line of the value they terminate', () => {
+        const input = `{{ [
+    'one' => t !== 'a' && t !== 'b',
+    'two' => p
+] | classes }}`;
+
+        assert.strictEqual(formatAntlers(input), input);
+        assert.strictEqual(formatAntlers(formatAntlers(input)), input);
+    });
+
+    test('wrapped operator chains indent beneath their array item', () => {
+        const input = `{{ [
+    'one' => t !== 'a' && t !== 'b' && t !== 'c',
+    'two' => p
+] | classes }}`,
+            expected = `{{ [
+    'one' => t !== 'a' && t !== 'b'
+        && t !== 'c',
+    'two' => p
+] | classes }}`,
+            firstPass = formatAntlers(input);
+
+        assert.strictEqual(firstPass, expected);
+        assert.strictEqual(formatAntlers(firstPass), firstPass);
+    });
+
+    test('wrapped operator chains use configured tabs', () => {
+        const input = `{{ [
+\t'one' => t !== 'a' && t !== 'b' && t !== 'c',
+\t'two' => p
+] | classes }}`,
+            expected = `{{ [
+\t'one' => t !== 'a' && t !== 'b'
+\t\t&& t !== 'c',
+\t'two' => p
+] | classes }}`,
+            options = formattingOptions('preserve', false),
+            firstPass = formatAntlers(input, options);
+
+        assert.strictEqual(firstPass, expected);
+        assert.strictEqual(formatAntlers(firstPass, options), firstPass);
+    });
+
+    test('operator chains outside arrays are unaffected', () => {
+        const input = `{{ if t !== 'a' && t !== 'b' && t !== 'c' }}x{{ /if }}`;
+
+        assert.strictEqual(formatAntlers(input), formatAntlers(formatAntlers(input)));
+    });
+
     test('multiple multi line arrays retain relative indentation', () => {
         const input = `{{ first = [
     'one',
