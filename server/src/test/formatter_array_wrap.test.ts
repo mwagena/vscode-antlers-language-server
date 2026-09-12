@@ -353,6 +353,35 @@ after = values[2][1] }}`,
         assert.strictEqual(formatAntlers(input, formattingOptions('expand')), input);
     });
 
+    test('prefixed variables keep their prefix inside array literals', () => {
+        const inputs = [
+            `{{ [view:size, 'shrink-0', classes] | classes }}`,
+            `{{ [page:title] | classes }}`,
+            `{{ [foo:bar:baz] | classes }}`,
+            `{{ [a, view:size] | classes }}`,
+            `{{ ['a' => view:size] | classes }}`
+        ];
+
+        inputs.forEach((input) => {
+            assert.strictEqual(formatAntlers(input).trim(), input);
+            assert.strictEqual(formatAntlers(input, formattingOptions('collapse')).trim(), input);
+        });
+    });
+
+    test('array accessors still collapse their merged components', () => {
+        const inputs = [
+            `{{ view:background['default'] }}`,
+            `{{ view:background['default']['one'] }}`,
+            `{{ posts[1].title }}`,
+            `{{ values = [['one'], [], ['two']]
+ after = values[2][1] }}`
+        ];
+
+        inputs.forEach((input) => {
+            assert.strictEqual(formatAntlers(input, formattingOptions('collapse')).trim(), input);
+        });
+    });
+
     test('multiple multi line arrays retain relative indentation', () => {
         const input = `{{ first = [
     'one',

@@ -305,6 +305,7 @@ export class NodePrinter {
 
                 if (node instanceof VariableNode) {
                     if ((node.prev instanceof ImplicitArrayBegin || node.prev instanceof ImplicitArrayEnd) &&
+                        doc.getDocumentParser().getLanguageParser().isMergedVariableComponent(node.prev) &&
                         doc.getDocumentParser().getLanguageParser().isMergedVariableComponent(node)) {
                         continue;
                     }
