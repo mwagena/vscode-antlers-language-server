@@ -190,7 +190,8 @@ export class NodePrinter {
         const arrayWrapStack: ArrayPrintLayout[] = [],
             arrayWrapDecisions = options.arrayWrap == 'collapse'
                 ? new Map<string, ArrayWrapLayout>()
-                : NodePrinter.resolveArrayWrapping(lexerNodes, options, doc);
+                : NodePrinter.resolveArrayWrapping(lexerNodes, options, doc),
+            indentUnit = options.insertSpaces ? ' '.repeat(options.tabSize) : "\t";
         let nodeStatements = 0,
             nodeOperators = 0,
             arrayLiteralDepth = 0;
@@ -283,7 +284,19 @@ export class NodePrinter {
 
                         if ((!(node.prev instanceof VariableNode) || followsVariableStatement) &&
                             !(node.next instanceof InlineTernarySeparator) && !(node instanceof InlineTernarySeparator)) {
-                            nodeBuffer.newlineNDIndent();
+                            const arrayLayout = arrayWrapStack.length > 0
+                                ? arrayWrapStack[arrayWrapStack.length - 1]
+                                : null;
+
+                            if (arrayLayout != null && arrayLayout.wrap) {
+                                // Separators and closing brackets belong on the line of the value
+                                // they terminate, and everything else continues under its item.
+                                if (!(node instanceof ArgSeparator) && !(node instanceof ImplicitArrayEnd)) {
+                                    nodeBuffer.newLine().append(arrayLayout.itemIndent + indentUnit);
+                                }
+                            } else {
+                                nodeBuffer.newlineNDIndent();
+                            }
                         }
                     }
                 }
@@ -347,7 +360,7 @@ export class NodePrinter {
                             const layout = arrayWrapStack.pop();
 
                             if (layout?.wrap) {
-                                nodeBuffer.newLine().append(layout.closeIndent);
+                                nodeBuffer.trimBlankCurrentLine().newLine().append(layout.closeIndent);
                             }
 
                             nodeBuffer.append(']');
@@ -676,7 +689,7 @@ export class NodePrinter {
                     arrayLiteralDepth = Math.max(0, arrayLiteralDepth - 1);
 
                     if (layout?.wrap) {
-                        nodeBuffer.newLine().append(layout.closeIndent);
+                        nodeBuffer.trimBlankCurrentLine().newLine().append(layout.closeIndent);
                     }
 
                     nodeBuffer.append(node.content);
